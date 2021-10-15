@@ -1,0 +1,13 @@
+CROPPER_ARGS:
+  {    
+    'dilation_check': .01,
+    'inter_dilation_prop' : .08,
+    'closing_size' : 5,
+    'iliac_dilation_size' : 7,
+    'return_sacrum': [True],
+  }
+
+DELETE_WINGS:
+  {
+    'prop_radius': .75,
+  }
