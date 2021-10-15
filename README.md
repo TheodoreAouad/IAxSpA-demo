@@ -47,7 +47,7 @@ Works for Python version >=3.7. The following python libraries are necessary:
 
 To use the U-Net to segment the iliac / sacrum and predict the ROIs (replace paths between `{}` by real paths):
 
-`python main_iliac -weights_iliac {path/to/weights_iliac.pt} -weights_sacrum {path/to/weights_sacrum.pt} -t1 data/Patient1/T1 -stir data/Patient1/STIR -output {path/to/output} -output {path/to/output} -device cuda`
+`python main_unet -weights_iliac {path/to/weights_iliac.pt} -weights_sacrum {path/to/weights_sacrum.pt} -t1 data/Patient1/T1 -stir data/Patient1/STIR -output {path/to/output} -output {path/to/output} -device cuda`
 
 You can also choose to run on cpu, with `-device cpu`
 
