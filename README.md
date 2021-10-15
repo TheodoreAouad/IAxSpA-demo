@@ -62,3 +62,9 @@ To use the Mask-RCNN to segment the ROI, classify the ROIs and diagnose the pati
 
 `python main -weights {path/to/weights_mrcnn.pt} -t1 data/Patient1/T1 -stir data/Patient1/STIR -output {path/to/output}` 
 
+
+In the `{path/to/output}` folder:
+- a folder `inputs` will be created where preprocessed inputs will be saved
+- a folder `outputs` will be created. Inside will be:
+    - a csv file `detectron2_outputs.csv` with information on the output of the Mask-RCNN for each slice
+    - a folder `images` to vizualise the outputs of the Mask-RCNN on the slices
