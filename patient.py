@@ -343,6 +343,7 @@ class Patient:
             self.save_inputs(save_inputs_path)
 
         self.detectron2_outputs = all_outputs
+        return self.detectron2_outputs
 
 
     def save_inputs(self, save_inputs_path):
@@ -355,42 +356,51 @@ class Patient:
             pil_to_save.save(join(save_inputs_path, f'input_{idx}.png'))
 
 
-    def save_detectron2_outputs(self, path, verbose=True, save_figs=False):
-        pathlib.Path(join(path, 'images')).mkdir(exist_ok=True, parents=True)
+    def create_df_detectron2_outputs(self):
         all_dfs = []
         for output in self.detectron2_outputs:
             cur_df = process_single_output(output=output)
             cur_df['patient_id'] = self.patient_id
             all_dfs.append(cur_df)
-        # return pd.concat(all_dfs)
         df_results = pd.concat(all_dfs)
         patient_diagnosis = self.decision_rule_threshold(df_results)
         df_results['patient_diagnosis'] = patient_diagnosis
+        self.df_detectron2_results = df_results
+        return self.df_detectron2_results
+
+
+    def create_detectron2_results_figure_idx(self, idx: int):
+        img = self.all_inputs[idx]
+        d = self.detectron2_outputs[idx]['instances'].to('cpu')
+        visualizer1 = Visualizer(
+            np.stack([img[:, :, 0]]*3, axis=-1),
+            metadata=MetadataCatalog.get("__nonexist__").set(thing_classes=['sane', 'sick']), scale=0.5,
+        )
+        visualizer2 = Visualizer(
+            np.stack([img[:, :, 2]]*3, axis=-1),
+            metadata=MetadataCatalog.get("__nonexist__").set(thing_classes=['sane', 'sick']), scale=0.5,
+        )
+        out1 = visualizer1.draw_instance_predictions(d)
+        out2 = visualizer2.draw_instance_predictions(d)
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        axs[0].imshow(out1.get_image())
+        axs[1].imshow(out2.get_image())
+        return fig
+
+    def save_detectron2_outputs(self, path, verbose=True, save_figs=False):
+        pathlib.Path(join(path, 'images')).mkdir(exist_ok=True, parents=True)
+        df_results = self.create_df_detectron2_outputs()
         df_results.to_csv(join(path, 'detectron2_outputs.csv'))
 
         if verbose:
             self.log_console(
                 "Patient Diagnosis:",
-                "mri positive for AxSpA" if patient_diagnosis else "mri negative for AxSpA"
+                "mri positive for AxSpA" if df_results['patient_diagnosis'].iloc[0] else "mri negative for AxSpA"
             )
             self.log_console('Saved detectron2 outputs in', join(path, 'detectron2_outputs.csv'))
 
         for idx in tqdm(range(len(self.mri_stir))):
-            img = self.all_inputs[idx]
-            d = self.detectron2_outputs[idx]['instances'].to('cpu')
-            visualizer1 = Visualizer(
-                np.stack([img[:, :, 0]]*3, axis=-1),
-                metadata=MetadataCatalog.get("__nonexist__").set(thing_classes=['sane', 'sick']), scale=0.5,
-            )
-            visualizer2 = Visualizer(
-                np.stack([img[:, :, 2]]*3, axis=-1),
-                metadata=MetadataCatalog.get("__nonexist__").set(thing_classes=['sane', 'sick']), scale=0.5,
-            )
-            out1 = visualizer1.draw_instance_predictions(d)
-            out2 = visualizer2.draw_instance_predictions(d)
-            fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-            axs[0].imshow(out1.get_image())
-            axs[1].imshow(out2.get_image())
+            fig = self.create_detectron2_results_figure_idx(idx)
             fig.savefig(join(path, "images", f"{idx}.png"))
             plt.close(fig)
 

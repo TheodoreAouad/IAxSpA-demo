@@ -60,11 +60,36 @@ In the `{path/to/output}` folder:
 
 To use the Mask-RCNN to segment the ROI, classify the ROIs and diagnose the patient (replace paths between `{}` by real paths):
 
-`python main -weights {path/to/weights_mrcnn.pt} -t1 data/Patient1/T1 -stir data/Patient1/STIR -output {path/to/output}` 
+`python main -weights {path/to/weights_mrcnn.pt} -patients {path/to/patient/folder} -output {path/to/output}` 
+
+The `{path/to/patient/folder}` must be organized as follow. It is important to respect the names "T1" and "STIR".
+
+```
+{path/to/patients}
+    | {Patient1}
+        | T1
+            | {dicom file 1}
+            | ...
+            | {dicom file n}
+        | STIR
+            | {dicom file 1}
+            | ...
+            | {dicom file n}
+    | ...
+    | {PatientN}
+        | T1
+            | {dicom file 1}
+            | ...
+            | {dicom file k}
+        | STIR
+            | {dicom file 1}
+            | ...
+            | {dicom file k}
+```
 
 
-In the `{path/to/output}` folder:
+In the `{path/to/output}` folder, for each patient:
 - a folder `inputs` will be created where preprocessed inputs will be saved
 - a folder `outputs` will be created. Inside will be:
-    - a csv file `detectron2_outputs.csv` with information on the output of the Mask-RCNN for each slice
-    - a folder `images` to vizualise the outputs of the Mask-RCNN on the slices
+    - a csv file `detectron2_outputs.csv` with information on the output of the Mask-RCNN for each slice, as well as for the whole patient.
+    - a folder `images` to vizualise the outputs of the Mask-RCNN on the slices.
