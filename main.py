@@ -3,6 +3,7 @@ import os
 from os.path import join
 from time import time
 
+import pandas as pd
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
@@ -64,6 +65,7 @@ def get_predictor(path_to_weights):
 
 
 all_patients = os.listdir(cli_args.all_patients)
+results = []
 for idx, patient_folder in enumerate(all_patients):
     print("=============================")
     print(f"Computing patient {idx + 1} / {len(all_patients)}.")
@@ -87,6 +89,16 @@ for idx, patient_folder in enumerate(all_patients):
     print(f"Saving results in {join(output_path, 'outputs')} ...")
     patient.save_detectron2_outputs(join(output_path, "outputs"))
     print("Done.")
+
+    results.append(pd.DataFrame({
+        'patient': [patient_folder],
+        'path': [join(cli_args.all_patients, patient_folder)],
+        'diagnosis_pred': [patient.is_positive],
+    }))
+
+results = pd.concat(results)
+results.to_csv(join(cli_args.output_path, 'patient_results.csv'), index=False)
+print(f"Saved all patient results in {join(cli_args.output_path, 'patient_results.csv')}")
 
 print()
 print(f'All done in {time() - start:.0f} s.')

@@ -47,7 +47,7 @@ Works for Python version >=3.7. The following python libraries are necessary:
 
 To use the U-Net to segment the iliac / sacrum and predict the ROIs (replace paths between `{}` by real paths):
 
-`python main_unet -weights_iliac {path/to/weights_iliac.pt} -weights_sacrum {path/to/weights_sacrum.pt} -t1 data/Patient1/T1 -stir data/Patient1/STIR -output {path/to/output} -output {path/to/output} -device cuda`
+`python main_unet.py -weights_iliac {path/to/weights_iliac.pt} -weights_sacrum {path/to/weights_sacrum.pt} -t1 data/Patient1/T1 -stir data/Patient1/STIR -output {path/to/output} -output {path/to/output} -device cuda`
 
 You can also choose to run on cpu, with `-device cpu`
 
@@ -60,7 +60,7 @@ In the `{path/to/output}` folder:
 
 To use the Mask-RCNN to segment the ROI, classify the ROIs and diagnose the patient (replace paths between `{}` by real paths):
 
-`python main -weights {path/to/weights_mrcnn.pt} -patients {path/to/patient/folder} -output {path/to/output}` 
+`python main.py -weights {path/to/weights_mrcnn.pt} -patients {path/to/patient/folder} -output {path/to/output}` 
 
 The `{path/to/patient/folder}` must be organized as follow. It is important to respect the names "T1" and "STIR".
 
@@ -91,5 +91,7 @@ The `{path/to/patient/folder}` must be organized as follow. It is important to r
 In the `{path/to/output}` folder, for each patient:
 - a folder `inputs` will be created where preprocessed inputs will be saved
 - a folder `outputs` will be created. Inside will be:
-    - a csv file `detectron2_outputs.csv` with information on the output of the Mask-RCNN for each slice, as well as for the whole patient.
-    - a folder `images` to vizualise the outputs of the Mask-RCNN on the slices.
+    - a folder for each patient with:
+        - a csv file `detectron2_outputs.csv` with information on the output of the Mask-RCNN for each slice, as well as for the whole patient.
+        - a folder `images` to vizualise the outputs of the Mask-RCNN on the slices.
+    - a csv file `patient_results.csv` with the predicted diagnosis.

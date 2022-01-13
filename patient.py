@@ -1,5 +1,6 @@
 import os
 from os.path import join
+import warnings
 
 import torch
 import pandas as pd
@@ -26,11 +27,13 @@ class Patient:
     """
 
 
-    def __init__(self, patient_id=None, *args, **kwargs):
+    def __init__(self, patient_id=None, do_warn=True, do_exception=False, *args, **kwargs):
         self.patient_id = patient_id
 
         self.mri_t1, self.mri_stir = self._get_mris(*args, **kwargs)
+        self.check_mris(do_warn=do_warn, do_exception=do_exception)
 
+        self.is_positive = None
         self.segmentation = None
 
         self.roi_mask = None
@@ -40,6 +43,43 @@ class Patient:
         self.classif_data = None
 
         self.logger = None
+
+
+    def check_mris(self, do_warn=True, do_exception=False):
+        assert (self.mri_stir is not None) and (self.mri_t1 is not None), "self.get_mri must not return None"
+
+        # Check Length
+        if len(self.mri_stir) != len(self.mri_t1):
+            msg = (""
+                "The STIR and T1 do not have the same number of slices. "
+                f"T1: {len(self.mri_t1)}, STIR: {len(self.mri_stir)}. This could lead to a problem in the future."
+            "")
+            if do_exception:
+                raise ValueError(msg)
+            if do_warn:
+                warnings.warn(msg)
+
+        # Check Cosdirs
+        if self.mri_stir.cosdirs.iloc[0] != self.mri_t1.cosdirs.iloc[0]:
+            msg = (""
+                "The STIR and T1 slices do not have the same orientation."
+            "")
+            if do_exception:
+                raise ValueError(msg)
+            if do_warn:
+                warnings.warn(msg)
+
+        # Check other DICOM values
+        if len(self.mri_stir) == len(self.mri_t1):
+            for col in ['ImagePosition', "SliceThickness"]:
+                if (self.mri_t1[col] != self.mri_stir[col]).any():
+                    msg = (""
+                        f"The STIR and T1 do not have the same {col}."
+                    "")
+                    if do_exception:
+                        raise ValueError(msg)
+                    if do_warn:
+                        warnings.warn(msg)
 
 
     def set_logger(self, logger):
@@ -392,6 +432,8 @@ class Patient:
         df_results = self.create_df_detectron2_outputs()
         df_results.to_csv(join(path, 'detectron2_outputs.csv'))
 
+        self.is_positive = df_results['patient_diagnosis'].iloc[0]
+
         if verbose:
             self.log_console(
                 "Patient Diagnosis:",
@@ -403,6 +445,7 @@ class Patient:
             fig = self.create_detectron2_results_figure_idx(idx)
             fig.savefig(join(path, "images", f"{idx}.png"))
             plt.close(fig)
+        return df_results
 
     @staticmethod
     def get_volume_from_mri(mri, axis_to_stack=0):
