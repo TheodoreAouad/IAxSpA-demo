@@ -31,10 +31,10 @@ class Patient:
         self.patient_id = patient_id
 
         self.mri_t1, self.mri_stir = self._get_mris(*args, **kwargs)
+        self.checks = {"length": True, "cosdirs": True, "ImagePosiion": True, "SliceThickness": True}
         self.check_mris(do_warn=do_warn, do_exception=do_exception)
 
         self.is_positive = None
-        self.checks = {"length": True, "cosdirs": True, "ImagePosiion": True, "SliceThickness": True}
 
         self.segmentation = None
 
