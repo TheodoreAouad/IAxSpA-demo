@@ -34,6 +34,8 @@ class Patient:
         self.check_mris(do_warn=do_warn, do_exception=do_exception)
 
         self.is_positive = None
+        self.checks = {"length": True, "cosdirs": True, "ImagePosiion": True, "SliceThickness": True}
+
         self.segmentation = None
 
         self.roi_mask = None
@@ -58,6 +60,7 @@ class Patient:
                 raise ValueError(msg)
             if do_warn:
                 warnings.warn(msg)
+                self.checks["length"] = False
 
         # Check Cosdirs
         if self.mri_stir.cosdirs.iloc[0] != self.mri_t1.cosdirs.iloc[0]:
@@ -68,6 +71,7 @@ class Patient:
                 raise ValueError(msg)
             if do_warn:
                 warnings.warn(msg)
+                self.checks["cosdirs"] = False
 
         # Check other DICOM values
         if len(self.mri_stir) == len(self.mri_t1):
@@ -80,6 +84,7 @@ class Patient:
                         raise ValueError(msg)
                     if do_warn:
                         warnings.warn(msg)
+                        self.checks[col] = False
 
 
     def set_logger(self, logger):

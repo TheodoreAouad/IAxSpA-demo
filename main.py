@@ -4,6 +4,7 @@ from os.path import join
 from time import time
 
 import pandas as pd
+import numpy as np
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
@@ -90,11 +91,17 @@ for idx, patient_folder in enumerate(all_patients):
     patient.save_detectron2_outputs(join(output_path, "outputs"))
     print("Done.")
 
-    results.append(pd.DataFrame({
-        'patient': [patient_folder],
-        'path': [join(cli_args.all_patients, patient_folder)],
-        'diagnosis_pred': [patient.is_positive],
-    }))
+    results.append(pd.DataFrame(dict(
+        **{
+            'patient': [patient_folder],
+            'path': [join(cli_args.all_patients, patient_folder)],
+        },
+        **{f'{k}_OK': [v] for k, v in patient.checks.items()},
+        **{
+            'all_checks_OK': [np.array(list(patient.checks.values())).all()],
+            'diagnosis_pred': [patient.is_positive],
+        },
+    )))
 
 results = pd.concat(results)
 results.to_csv(join(cli_args.output_path, 'patient_results.csv'), index=False)

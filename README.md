@@ -62,6 +62,13 @@ To use the Mask-RCNN to segment the ROI, classify the ROIs and diagnose the pati
 
 `python main.py -weights {path/to/weights_mrcnn.pt} -patients {path/to/patient/folder} -output {path/to/output}` 
 
+The STIR and ROI must match. This means that they must have the same:
+
+- number of slices
+- orientation (`cosdirs`)
+- position (`ImagePosition`)
+- thickness (`SliceThickness`)
+
 The `{path/to/patient/folder}` must be organized as follow. It is important to respect the names "T1" and "STIR".
 
 ```
@@ -94,4 +101,4 @@ In the `{path/to/output}` folder, for each patient:
     - a folder for each patient with:
         - a csv file `detectron2_outputs.csv` with information on the output of the Mask-RCNN for each slice, as well as for the whole patient.
         - a folder `images` to vizualise the outputs of the Mask-RCNN on the slices.
-    - a csv file `patient_results.csv` with the predicted diagnosis.
+    - a csv file `patient_results.csv` with the predicted diagnosis and the checks for DICOM. 
