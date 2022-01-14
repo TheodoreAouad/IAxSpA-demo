@@ -65,43 +65,53 @@ def get_predictor(path_to_weights):
     return DefaultPredictor(cfg_eval)
 
 
-all_patients = os.listdir(cli_args.all_patients)
+all_patients = sorted(os.listdir(cli_args.all_patients))
 results = []
+bugged = []
 for idx, patient_folder in enumerate(all_patients):
-    print("=============================")
-    print(f"Computing patient {idx + 1} / {len(all_patients)}.")
-    patient = PatientDicom(
-        patient_id=patient_folder,
-        path_t1=join(cli_args.all_patients, patient_folder, 'T1'),
-        path_stir=join(cli_args.all_patients, patient_folder, 'STIR'),
-    )
+    try:
+        print("=============================")
+        print(f"Computing patient {idx + 1} / {len(all_patients)}.")
+        patient = PatientDicom(
+            patient_id=patient_folder,
+            path_t1=join(cli_args.all_patients, patient_folder, 'T1'),
+            path_stir=join(cli_args.all_patients, patient_folder, 'STIR'),
+        )
 
-    output_path = join(cli_args.output_path, patient_folder)
+        output_path = join(cli_args.output_path, patient_folder)
 
-    print(f"Applying mask-rcnn on {patient_folder}...")
-    patient.apply_detectron2(
-        get_predictor(cli_args.path_weights),
-        preprocessing=preprocessing,
-        t1_chans=[2],
-        stir_chans=[0, 1],
-        save_inputs_path=join(output_path, "inputs"),
-    )
+        print(f"Applying mask-rcnn on {patient_folder}...")
+        patient.apply_detectron2(
+            get_predictor(cli_args.path_weights),
+            preprocessing=preprocessing,
+            t1_chans=[2],
+            stir_chans=[0, 1],
+            save_inputs_path=join(output_path, "inputs"),
+        )
 
-    print(f"Saving results in {join(output_path, 'outputs')} ...")
-    patient.save_detectron2_outputs(join(output_path, "outputs"))
-    print("Done.")
+        print(f"Saving results in {join(output_path, 'outputs')} ...")
+        patient.save_detectron2_outputs(join(output_path, "outputs"))
+        print("Done.")
 
-    results.append(pd.DataFrame(dict(
-        **{
-            'patient': [patient_folder],
-            'path': [join(cli_args.all_patients, patient_folder)],
-        },
-        **{f'{k}_OK': [v] for k, v in patient.checks.items()},
-        **{
-            'all_checks_OK': [np.array(list(patient.checks.values())).all()],
-            'diagnosis_pred': [patient.is_positive],
-        },
-    )))
+        results.append(pd.DataFrame(dict(
+            **{
+                'patient': [patient_folder],
+                'path': [join(cli_args.all_patients, patient_folder)],
+            },
+            **{f'{k}_OK': [v] for k, v in patient.checks.items()},
+            **{
+                'all_checks_OK': [np.array(list(patient.checks.values())).all()],
+                'diagnosis_pred': [patient.is_positive],
+            },
+        )))
+    except Exception as e:
+        print(patient_folder, 'bugged : ')
+        print(e)
+        bugged.append(patient_folder)
+
+print()
+print('Patient bugged:', bugged)
+print()
 
 results = pd.concat(results)
 results.to_csv(join(cli_args.output_path, 'patient_results.csv'), index=False)
